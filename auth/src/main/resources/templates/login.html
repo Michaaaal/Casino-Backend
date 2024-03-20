@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+</head>
+<body>
+
+<div class="img-container" id="img-container2"></div>
+<div class="container">
+    <img src="/img/logo.svg" class="logo">
+    <div class="login-container">
+
+        <div class="message" th:text="${message} ?: 'Please log in.'"></div>
+
+
+
+        <form th:action="@{/auth/loginPost}" method="post">
+            <div class="input-group">
+                <label for="username">username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="input-group">
+                <label for="password">password:</label>
+                <input type="password" id="password" name="password" required>
+                forgotten password?
+            </div>
+            <div class="input-group">
+                <button type="submit">Log in</button>
+            </div>
+            <div class="input-group">
+                <button type="submit">Register</button>
+            </div>
+            <div class="input-group">
+                <a href="/oauth2/authorization/google" class="btn-google-login">Log in with Google</a>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+<div class="img-container"></div>
+
+</body>
+</html>
