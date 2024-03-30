@@ -41,8 +41,6 @@ public class UserConfiguration {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("fonts/**","img/**","css/**","auth/img/**","auth/login","auth/loginPost","auth/register","auth/error","auth/registerCheck","auth/validate")
-                        .permitAll()
                         .anyRequest().permitAll()
                 );
         return http.build();

@@ -37,9 +37,6 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     public GatewayFilter apply(Config config) {
         return ((exchange, chain) -> {
             if (validator.isSecure.test(exchange.getRequest())) {
-
-                System.out.println("DUPA");
-
                 if (!exchange.getRequest().getCookies().containsKey("token") && !exchange.getRequest().getCookies().containsKey("refresh")) {
                     exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                     exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
@@ -50,7 +47,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                             "\"timestamp\": \"" +
                             new Timestamp(System.currentTimeMillis()) +
                             "\",\n" +
-                            "\"message\": \"Wskazany token jest pusty lub nie ważny\",\n" +
+                            "\"message\": \"This token is empty or expired\",\n" +
                             "\"code\": \"A3\"\n" +
                             "}";
 

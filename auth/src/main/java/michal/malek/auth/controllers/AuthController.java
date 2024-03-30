@@ -2,12 +2,11 @@ package michal.malek.auth.controllers;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import michal.malek.auth.models.AuthResponse;
+import michal.malek.auth.exceptions.UserDontExistException;
 import michal.malek.auth.services.UserService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -28,17 +27,37 @@ public class AuthController {
 
     @PostMapping("/loginPost")
     public String login(String username, String password, HttpServletResponse response, RedirectAttributes redirectAttributes) {
-        AuthResponse authResponse = userService.login(response, username, password);
-        redirectAttributes.addFlashAttribute("message", authResponse.toString());
+        ResponseEntity<?> authResponse = userService.login(response, username, password);
+        redirectAttributes.addFlashAttribute("message", authResponse.getBody());
 
-        System.out.println(authResponse.isOk());
-        if(authResponse.isOk()){
+        if(authResponse.toString().equals("SUCCESS")){
             return "redirect:http://localhost:8888/auth/loginSuccess";
         }
         else{
             return "redirect:http://localhost:8888/auth/login";
         }
     }
+
+
+
+
+    @GetMapping("/retrievePassword")
+    public String passwordRecovery(){
+        return "/retrievePassword";
+    }
+
+    @PostMapping("/password-recovery")
+    public String passwordRecovery(@RequestParam String email, RedirectAttributes redirectAttributes){
+        try{
+            userService.retrievePassword(email);
+            redirectAttributes.addFlashAttribute("message", "Mail Sent, Check you mailbox");
+        }catch (UserDontExistException e){
+            redirectAttributes.addFlashAttribute("message", "Could not send mail, User dont exist");
+        }
+        return "redirect:http://localhost:8888/auth/retrievePassword";
+    }
+
+
 
 
 }
