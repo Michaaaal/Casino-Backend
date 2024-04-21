@@ -115,16 +115,23 @@ public class UserService {
                     Cookie refresh = cookieService.generateCookie("refresh",generateToken(authRequest.getUsername(),jwtRefreshExpiration),jwtRefreshExpiration);
                     response.addCookie(cookie);
                     response.addCookie(refresh);
-                    return ResponseEntity.ok("SUCCESS");
+                    return ResponseEntity.ok(
+                            UserRegisterDTO
+                                    .builder()
+                                    .login(user.getUsername())
+                                    .email(user.getEmail())
+                                    .role(user.getRole())
+                                    .build());
+
                 }else {
-                    return ResponseEntity.ok("WRONG PASSWORD");
+                    return ResponseEntity.status(401).body(new AuthResponse("WRONG PASSWORD"));
                 }
             } catch (AuthenticationException e) {
-                return ResponseEntity.ok("SOMETHING WENT WRONG");
+                return ResponseEntity.status(401).body(new AuthResponse("SOMETHING WENT WRONG"));
             }
         }
 
-        return ResponseEntity.ok("NO SUCH ACCOUNT OR NOT VERIFIED ACC");
+        return ResponseEntity.status(401).body(new AuthResponse("NO SUCH ACCOUNT OR NOT VERIFIED ACC"));
     }
 
     public ResponseEntity<?> loginByToken(HttpServletRequest request, HttpServletResponse response) {
@@ -147,10 +154,10 @@ public class UserService {
                                 .role(user.getRole())
                                 .build());
             }
-            return ResponseEntity.status(401).body("wrong or expired token");
+            return ResponseEntity.status(401).body(new AuthResponse("wrong or expired token"));
         }
         catch (ExpiredJwtException | IllegalArgumentException e){
-            return ResponseEntity.status(401).body("wrong or no token");
+            return ResponseEntity.status(401).body(new AuthResponse("wrong or no token"));
         }
     }
 
@@ -168,7 +175,7 @@ public class UserService {
             throw new UserDontExistException("User does not exist");
     }
 
-    public void retrievePassword(String email) throws UserDontExistException{
+    public void retrievePassword(String email) throws UserDontExistException, IOException {
         Optional<User> userByEmail = userRepository.findUserByEmail(email);
 
         if(userByEmail.isPresent()) {
@@ -180,17 +187,31 @@ public class UserService {
     }
 
     @Transactional
-    public void changePassword(String uid, UserChangePasswordDTO userChangePasswordDTO){
-        ResetOperations resetOperations = resetOperationsRepository.findByUid(uid).orElse(null);
+    public void changePassword( UserChangePasswordDTO userChangePasswordDTO){
+        ResetOperations resetOperations = resetOperationsRepository.findByUid(userChangePasswordDTO.getUid()).orElse(null);
         if(resetOperations !=null){
             Optional<User> userByUid = userRepository.findUserByUid(resetOperations.getUser().getUid());
 
             if(userByUid.isPresent()){
-                userByUid.get().setPassword(userChangePasswordDTO.getPassword());
+                userByUid.get().setPassword(passwordEncoder.encode(userChangePasswordDTO.getPassword()));
                 userRepository.save(userByUid.get());
                 resetOperationService.endOperation(resetOperations.getUid());
             }else
                 throw new UserDontExistException();
         }
+    }
+
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+
+        Cookie cookie = cookieService.removeCookie(request.getCookies(),"token");
+        if (cookie != null){
+            response.addCookie(cookie);
+        }
+        cookie = cookieService.removeCookie(request.getCookies(),"refresh");
+        if (cookie != null){
+            response.addCookie(cookie);
+        }
+
+        return ResponseEntity.ok().body(new AuthResponse("Success"));
     }
 }

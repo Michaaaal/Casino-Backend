@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity
+import java.sql.Timestamp;
+
+@Entity(name = "reset_operations")
 @Getter
 @Setter
 @AllArgsConstructor
@@ -18,10 +20,10 @@ public class ResetOperations {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "users")
+    @JoinColumn(name = "users_id")
     private User user;
 
-    private String createDate;
+    private Timestamp createDate;
     private String uid;
 
 }

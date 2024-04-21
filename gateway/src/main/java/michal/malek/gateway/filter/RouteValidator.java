@@ -13,9 +13,11 @@ public class RouteValidator {
             "/auth/reset-password",
             "/auth/activate",
             "/auth/password-recovery",
-            "/auth/retrievePassword",
+            "/auth/change-password",
             "/auth/login",
-            "/auth/loginPost",
+            "/auth/auto-login",
+            "/auth/logout",
+            "/auth/logged-in",
             "/auth/register",
             "/auth/validate");
 

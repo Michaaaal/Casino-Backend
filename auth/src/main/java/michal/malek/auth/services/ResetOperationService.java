@@ -26,7 +26,7 @@ public class ResetOperationService {
 
         resetOperations.setUid(UUID.randomUUID().toString());
         resetOperations.setUser(user);
-        resetOperations.setCreateDate(new Timestamp(System.currentTimeMillis()).toString());
+        resetOperations.setCreateDate(new Timestamp(System.currentTimeMillis()));
 
         resetOperationsRepository.deleteAllByUser(user);
 

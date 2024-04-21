@@ -32,17 +32,17 @@ public class EmailService {
     public void sendActivation(User user) throws IOException {
         try{
             String html = Files.toString(activeTemplate.getFile() , Charsets.UTF_8);
-            html = html.replace("https://google.com","http://localhost:8888" + "/auth/activate?uid=" + user.getUid());
+            html = html.replace("https://google.com",frontUrl + "/account-activate/" + user.getUid());
             emailConfiguration.sendMail(user.getEmail(), html,"CasinoFox Account Activation",true);
         }catch (IOException e){
             throw new RuntimeException(e);
         }
     }
 
-    public void sendPasswordRecovery(User user, String uid) {
+    public void sendPasswordRecovery(User user, String uid) throws IOException {
         try{
             String html = Files.toString(retrieveTemplate.getFile() , Charsets.UTF_8);
-            html = html.replace("https://google.com",frontUrl + "/auth/reset-password?uid=" +uid);
+            html = html.replace("https://google.com",frontUrl + "/retrieve-password/" +uid);
             emailConfiguration.sendMail(user.getEmail(),html,"CasinoFox Retrieve Password",true);
         }catch (IOException e){
             throw new RuntimeException(e);
