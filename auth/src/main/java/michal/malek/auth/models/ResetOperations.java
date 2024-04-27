@@ -14,16 +14,12 @@ import java.sql.Timestamp;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ResetOperations {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne
     @JoinColumn(name = "users_id")
     private User user;
-
     private Timestamp createDate;
     private String uid;
-
 }

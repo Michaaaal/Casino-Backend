@@ -28,8 +28,9 @@ public class User implements UserDetails {
     private Role role;
     private boolean isLock;
     private boolean isEnabled;
+    private boolean isGoogle;
 
-    public User(long id, String uid, String login, String email, String password, Role role, boolean isLock, boolean isEnabled) {
+    public User(long id, String uid, String login, String email, String password, Role role, boolean isLock, boolean isEnabled, boolean isGoogle) {
         this.id = id;
         this.uid = uid;
         this.login = login;
@@ -38,6 +39,7 @@ public class User implements UserDetails {
         this.role = role;
         this.isLock = isLock;
         this.isEnabled = isEnabled;
+        this.isGoogle = isGoogle;
         this.generateUid();
     }
 

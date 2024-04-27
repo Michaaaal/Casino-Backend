@@ -15,6 +15,8 @@ public class RouteValidator {
             "/auth/password-recovery",
             "/auth/change-password",
             "/auth/login",
+            "/auth/google-login",
+            "/auth/exchange-code",
             "/auth/auto-login",
             "/auth/logout",
             "/auth/logged-in",

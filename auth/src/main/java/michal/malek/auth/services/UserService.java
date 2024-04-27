@@ -19,6 +19,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -36,6 +39,7 @@ public class UserService {
     private final EmailService emailService;
     private final ResetOperationService resetOperationService;
     private final ResetOperationsRepository resetOperationsRepository;
+    private final GoogleOAuth2Service googleOAuth2Service;
 
     @Value("${jwt.exp}")
     private int jwtExpiration;
@@ -106,7 +110,11 @@ public class UserService {
         User authRequest = User.builder().password(password).login(login).build();
         User user = userRepository.findUserByLoginAndIsEnabledAndIsLock(authRequest.getUsername()).orElse(null);
 
+
         if(user!=null){
+            if(user.isGoogle()){
+                return ResponseEntity.status(401).body(new AuthResponse("SOMETHING WENT WRONG"));
+            }
             try {
                 Authentication authentication = authenticationManager
                         .authenticate(new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
@@ -162,7 +170,8 @@ public class UserService {
     }
 
     private void saveUser(User user){
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if(!user.getPassword().isEmpty())
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.saveAndFlush(user);
     }
 
@@ -178,7 +187,7 @@ public class UserService {
     public void retrievePassword(String email) throws UserDontExistException, IOException {
         Optional<User> userByEmail = userRepository.findUserByEmail(email);
 
-        if(userByEmail.isPresent()) {
+        if(userByEmail.isPresent() && !userByEmail.get().isGoogle()) {
             ResetOperations resetOperations = resetOperationService.initResetOperation(userByEmail.get());
             emailService.sendPasswordRecovery(userByEmail.get(), resetOperations.getUid());
         }
@@ -211,7 +220,59 @@ public class UserService {
         if (cookie != null){
             response.addCookie(cookie);
         }
-
         return ResponseEntity.ok().body(new AuthResponse("Success"));
+    }
+
+    public ResponseEntity<?> loginWithGoogle(String code, HttpServletResponse response) {
+
+        OAuth2AccessToken accessToken = googleOAuth2Service.codeToAccessToken(code);
+        OAuth2AuthenticationToken authentication = googleOAuth2Service.accessTokenToAuthToken(accessToken);
+
+        OAuth2User user = authentication.getPrincipal();
+
+        try {
+            if(authentication.isAuthenticated()){
+                String email = user.getAttribute("email");
+                User userByEmail = userRepository.findUserByEmail(email).orElse(null);
+
+                if(userByEmail==null){
+                    User newUser = new User();
+                    newUser.setEmail(user.getAttribute("email"));
+                    newUser.setLogin(user.getAttribute("name"));
+                    newUser.setUid(user.getAttribute("sub"));
+                    newUser.setPassword("");
+                    newUser.setLock(false);
+                    newUser.setEnabled(true);
+                    newUser.setGoogle(true);
+                    newUser.setRole(Role.USER);
+
+                    this.saveUser(newUser);
+                    userByEmail = newUser;
+                }
+
+                if(!userByEmail.getUid().equals(user.getAttribute("sub")) || !userByEmail.isGoogle()){
+                    return ResponseEntity.status(401).body(new AuthResponse("Cant Authorize, probably gmail is already used"));
+                }
+
+                String tokenValue = jwtService.generateToken(user.getAttribute("name"), jwtExpiration);
+                String refreshValue = jwtService.generateToken(user.getAttribute("name"), jwtRefreshExpiration);
+                Cookie token = cookieService.generateCookie("token", tokenValue, jwtExpiration);
+                Cookie refresh = cookieService.generateCookie("refresh", refreshValue, jwtRefreshExpiration);
+                response.addCookie(token);
+                response.addCookie(refresh);
+
+                return ResponseEntity.ok(
+                        UserRegisterDTO
+                                .builder()
+                                .login(userByEmail.getUsername())
+                                .email(userByEmail.getEmail())
+                                .role(userByEmail.getRole())
+                                .build());
+            }else {
+                return ResponseEntity.status(401).body(new AuthResponse("AUTHORIZATION WENT WRONG 2"));
+            }
+        }catch( AuthenticationException authenticationException){
+            return ResponseEntity.status(500).body(new AuthResponse("AUTHORIZATION WENT WRONG 3"));
+        }
     }
 }

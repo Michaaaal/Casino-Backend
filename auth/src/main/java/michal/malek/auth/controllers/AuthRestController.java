@@ -14,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 
@@ -37,7 +36,7 @@ public class AuthRestController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> passwordRecovery(@RequestBody EmailDTO email, RedirectAttributes redirectAttributes){
+    public ResponseEntity<?> passwordRecovery(@RequestBody EmailDTO email){
         try{
             userService.retrievePassword(email.getEmail());
             return ResponseEntity.ok(new AuthResponse("Success"));
@@ -62,6 +61,26 @@ public class AuthRestController {
     public ResponseEntity<?> login(@RequestBody UserLoginDTO userLoginData, HttpServletResponse response){
         return userService.login(response, userLoginData.getLogin(), userLoginData.getPassword());
     }
+
+    @PostMapping("/exchange-code")
+    public ResponseEntity<?> loginWithGoogle(@RequestBody String code, HttpServletResponse response) {
+        return userService.loginWithGoogle(code, response);
+    }
+    @GetMapping("/logged-in")
+    public ResponseEntity<?> loggedIn(HttpServletRequest request, HttpServletResponse response){
+        try {
+            userService.validateToken(request, response);
+            return ResponseEntity.ok().body(new LoginResponse(true));
+        }catch (IllegalArgumentException | ExpiredJwtException e){
+            return ResponseEntity.ok().body(new LoginResponse(false));
+        }
+    }
+
+    @GetMapping("/auto-login")
+    public ResponseEntity<?> autoLogin(HttpServletRequest request, HttpServletResponse response){
+        return userService.loginByToken(request,response);
+    }
+
     @GetMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request,HttpServletResponse response){
         return userService.logout(request, response);
@@ -77,10 +96,8 @@ public class AuthRestController {
         }
     }
 
-
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken(HttpServletRequest request, HttpServletResponse response){
-        //System.out.println("VALIDATION");
         try {
             userService.validateToken(request, response);
             return ResponseEntity.ok().body(new AuthResponse("Success"));
@@ -89,20 +106,6 @@ public class AuthRestController {
         }
     }
 
-    @GetMapping("/logged-in")
-    public ResponseEntity<?> loggedIn(HttpServletRequest request, HttpServletResponse response){
-        try {
-            userService.validateToken(request, response);
-            return ResponseEntity.ok().body(new LoginResponse(true));
-        }catch (IllegalArgumentException | ExpiredJwtException e){
-            return ResponseEntity.ok().body(new LoginResponse(false));
-        }
-    }
-
-    @GetMapping("/auto-login")
-    public ResponseEntity<?> autoLogin(HttpServletRequest request, HttpServletResponse response){
-        return userService.loginByToken(request,response);
-    }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)

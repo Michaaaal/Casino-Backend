@@ -16,8 +16,6 @@ import java.io.IOException;
 public class EmailService {
 
     private final EmailConfiguration emailConfiguration;
-    @Value("${front.url")
-    private String thFrontUrl;
 
     @Value("${front2.url}")
     private String frontUrl;
