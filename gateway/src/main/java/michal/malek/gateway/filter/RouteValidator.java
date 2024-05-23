@@ -14,6 +14,7 @@ public class RouteValidator {
             "/auth/activate",
             "/auth/password-recovery",
             "/auth/change-password",
+            "/auth/retrieve-password",
             "/auth/login",
             "/auth/google-login",
             "/auth/exchange-code",
@@ -21,7 +22,8 @@ public class RouteValidator {
             "/auth/logout",
             "/auth/logged-in",
             "/auth/register",
-            "/auth/validate");
+            "/auth/validate"
+    );
 
     public Predicate<ServerHttpRequest> isSecure =
             serverHttpRequest -> openEndpoints

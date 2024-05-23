@@ -129,6 +129,7 @@ public class UserService {
                                     .login(user.getUsername())
                                     .email(user.getEmail())
                                     .role(user.getRole())
+                                    .id(user.getId())
                                     .build());
 
                 }else {
@@ -160,6 +161,7 @@ public class UserService {
                                 .email(user.getEmail())
                                 .login(user.getLogin())
                                 .role(user.getRole())
+                                .id(user.getId())
                                 .build());
             }
             return ResponseEntity.status(401).body(new AuthResponse("wrong or expired token"));
@@ -267,6 +269,7 @@ public class UserService {
                                 .login(userByEmail.getUsername())
                                 .email(userByEmail.getEmail())
                                 .role(userByEmail.getRole())
+                                .id(userByEmail.getId())
                                 .build());
             }else {
                 return ResponseEntity.status(401).body(new AuthResponse("AUTHORIZATION WENT WRONG 2"));

@@ -22,4 +22,5 @@ public class UserRegisterDTO {
     @Length(min=8, max=75, message = "password should have at least 8 characters")
     private String password;
     private Role role;
+    private long id;
 }
