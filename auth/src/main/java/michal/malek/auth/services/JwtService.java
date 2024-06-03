@@ -1,8 +1,6 @@
 package michal.malek.auth.services;
 
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,9 +27,10 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String username,int exp){
-        Map<String, Object> claimns = new HashMap<>();
-        return createToken(claimns,username,exp);
+    public String generateToken(long userId,String username,int exp){
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        return createToken(claims,username,exp);
     }
     public String createToken(Map<String,Object> claims, String username,int exp){
         return Jwts.builder()
@@ -50,9 +49,25 @@ public class JwtService {
                 .getBody()
                 .getSubject();
     }
+
+    public long getClaimUserId(final String token){
+        try {
+            Jws<Claims> claimsJws = Jwts.parserBuilder()
+                    .setSigningKey(getSignKey())
+                    .build()
+                    .parseClaimsJws(token);
+
+            Claims claims = claimsJws.getBody();
+
+            return Long.parseLong(claims.get("userId").toString());
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to extract user ID from token", e);
+        }
+    }
     public String refreshToken(final String token, int exp){
         String username = getSubject(token);
-        return generateToken(username,exp);
+        long userId = getClaimUserId(token);
+        return generateToken(userId,username,exp);
     }
 }
 

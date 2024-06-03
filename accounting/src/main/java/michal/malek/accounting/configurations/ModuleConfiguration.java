@@ -8,8 +8,10 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 @ComponentScan
 public class ModuleConfiguration {
+
     @Bean
     public RestTemplate restTemplate(){
         return new RestTemplate();
     }
+
 }

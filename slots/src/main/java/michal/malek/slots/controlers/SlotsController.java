@@ -1,28 +1,30 @@
 package michal.malek.slots.controlers;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import michal.malek.slots.models.BalanceUpdateDTO;
 import michal.malek.slots.models.GameIdDTO;
 import michal.malek.slots.models.SlotResponse;
 import michal.malek.slots.models.SlotsGameEntity;
 import michal.malek.slots.services.SlotsService;
+import michal.malek.slots.services.UserService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController()
 @RequiredArgsConstructor
 @RequestMapping("/slots")
 public class SlotsController {
     private final SlotsService slotsService;
+    private final UserService userService;
 
-    @PostMapping("/spin")
-    public ResponseEntity<?> spin(@RequestBody BalanceUpdateDTO balanceUpdateDTO){
+    @GetMapping("/spin")
+    public ResponseEntity<?> spin(HttpServletRequest request, @RequestParam long stake){
+        long userId = userService.getUserId(request);
+        if(userId == -1){
+            return ResponseEntity.status(401).body("Cannot get Claims from Jwt Token");
+        }
+
         try{
-            int stake = (int)balanceUpdateDTO.getAmount();
-            int userId = (int)balanceUpdateDTO.getUserId();
             SlotsGameEntity spin = slotsService.startSlotGame(stake, userId);
             return ResponseEntity.ok(spin);
         }catch (Exception e){
@@ -30,15 +32,23 @@ public class SlotsController {
         }
     }
 
-    @PostMapping("/make-game-done")
+    @PatchMapping("/make-game-done")
     public ResponseEntity<?> spin(@RequestBody GameIdDTO gameIdDTO){
-        System.out.println("make game done");
         try{
-            slotsService.makeSlotGameDone((long)gameIdDTO.getGameId());
+            slotsService.makeSlotGameDone(gameIdDTO.getGameId());
             return ResponseEntity.ok(new SlotResponse("SUCCESS"));
         }catch (Exception e){
-            return ResponseEntity.status(401).body(new SlotResponse("Something went wrong: ") + e.getMessage());
+            return ResponseEntity.status(400).body(new SlotResponse("Something went wrong: ") + e.getMessage());
         }
+    }
+
+    @GetMapping("/get-winning-games")
+    public ResponseEntity<?> getWinningGames(HttpServletRequest request){
+        long userId = userService.getUserId(request);
+        if(userId == -1){
+            return ResponseEntity.status(401).body("Cannot get Claims from Jwt Token");
+        }
+        return ResponseEntity.ok(slotsService.getWinningSlotsGames(userId));
     }
 
 }

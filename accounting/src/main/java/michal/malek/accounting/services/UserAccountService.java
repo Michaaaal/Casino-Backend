@@ -25,16 +25,19 @@ public class UserAccountService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final PaycheckTransactionRepository paycheckTransactionRepository;
 
-    public UserAccount getUserAccountByHolderId(Long id){
+    public UserAccountDTO getUserAccountByHolderId(Long id){
         Optional<UserAccount> byUserId = userAccountRepository.findByUserId(id);
-        return byUserId.orElse(null);
+        if(byUserId.isPresent()){
+            UserAccount userAccount = byUserId.get();
+            return new UserAccountDTO(userAccount.getPhone(), userAccount.getEmail(), userAccount.getBankAccountNumber(), userAccount.getFirstName(),userAccount.getLastName());
+        }
+        return null;
     }
 
-    public UserAccount createAccount(UserAccountDTO userAccountDTO){
+    public UserAccount createAccount(long userId , UserAccountDTO userAccountDTO){
         try {
-            Long userIdLong = Long.parseLong(userAccountDTO.getUserId());
             UserAccount userAccount= UserAccount.builder()
-                    .userId(userIdLong)
+                    .userId(userId)
                     .bankAccountNumber(userAccountDTO.getBankAccountNumber())
                     .firstName(userAccountDTO.getFirstName())
                     .lastName(userAccountDTO.getLastName())
@@ -45,13 +48,13 @@ public class UserAccountService {
                     .build();
                 return userAccountRepository.saveAndFlush(userAccount);
         } catch (NumberFormatException e) {
-            System.err.println("Invalid number format: " + userAccountDTO.getUserId());
+            System.err.println("Invalid number format: " + userId);
         }
         return null;
     }
 
-    public UserAccount updateAccount(UserAccountDTO userAccountDTO){
-        Optional<UserAccount> byUserId = userAccountRepository.findByUserId(Long.getLong(userAccountDTO.getUserId()));
+    public UserAccount updateAccount(long userId ,UserAccountDTO userAccountDTO){
+        Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userId);
         if(byUserId.isPresent()){
             UserAccount userAccount = byUserId.get();
             if(!userAccountDTO.getFirstName().equals(userAccount.getFirstName()))
@@ -74,12 +77,9 @@ public class UserAccountService {
             return null;
     }
 
-    public String rechargeAccount(BalanceUpdateDTO balanceUpdateDTO){
-        long amount = balanceUpdateDTO.getAmount();
-        long userAccountHolderId = balanceUpdateDTO.getUserId();
+    public String rechargeAccount(long userId, long amount){
 
-        System.out.println(userAccountHolderId);
-        Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userAccountHolderId);
+        Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userId);
 
         if(byUserId.isPresent()){
             UserAccount userAccount = byUserId.get();
@@ -112,13 +112,13 @@ public class UserAccountService {
             throw new UserAccountNotFoundException("User Account not Found");
     }
 
-    public UserAccountBalance getUserAccountBalance(UserAccountHolderId userAccountHolderId){
-        Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userAccountHolderId.getUserId());
+    public UserAccountBalance getUserAccountBalance(long userId){
+        Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userId);
         return byUserId.map(userAccount -> new UserAccountBalance(userAccount.getBalance())).orElse(null);
     }
 
-    public void checkRechargeTransaction(UserAccountHolderId userAccountHolderId)  {
-        Optional<UserAccount> userAccount = userAccountRepository.findByUserId(userAccountHolderId.getUserId());
+    public void checkRechargeTransaction(long userAccountHolderId)  {
+        Optional<UserAccount> userAccount = userAccountRepository.findByUserId(userAccountHolderId);
 
         if(userAccount.isPresent()){
 
@@ -171,12 +171,11 @@ public class UserAccountService {
     }
 
     @Transactional
-    public void updateAccountBalanceForGame(BalanceUpdateDTO balanceUpdateDTO){
-        long userId = balanceUpdateDTO.getUserId();
+    public void updateAccountBalanceForGame(long userId, long amount){
         Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userId);
         UserAccount userAccount = byUserId.orElse(null);
         if(userAccount!= null){
-            userAccount.setBalance(userAccount.getBalance() + balanceUpdateDTO.getAmount());
+            userAccount.setBalance(userAccount.getBalance() + amount);
             userAccountRepository.saveAndFlush(userAccount);
         }else throw new UserAccountNotFoundException();
     }
@@ -190,15 +189,14 @@ public class UserAccountService {
     }
 
     @Transactional
-    public void paycheck(BalanceUpdateDTO balanceUpdateDTO) {
-        long userId = balanceUpdateDTO.getUserId();
+    public void paycheck(long userId, long amount) {
         Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userId);
 
 
 
         if(byUserId.isPresent()){
             UserAccount userAccount = byUserId.get();
-            if(userAccount.getBalance() < balanceUpdateDTO.getAmount()){
+            if(userAccount.getBalance() < amount){
                 this.blockUserAccount(userAccount);
                 throw new SuspiciousTransactionException();
                 //log
@@ -211,20 +209,20 @@ public class UserAccountService {
             PaycheckTransaction paycheckTransaction = PaycheckTransaction
                     .builder()
                     .userAccountId(Math.toIntExact(userAccount.getId()))
-                    .amount(balanceUpdateDTO.getAmount())
+                    .amount(amount)
                     .date(new Date())
                     .isDone(false)
                     .build();
 
-            userAccount.setBalance((userAccount.getBalance() - balanceUpdateDTO.getAmount()));
+            userAccount.setBalance((userAccount.getBalance() - amount));
             userAccountRepository.saveAndFlush(userAccount);
             paycheckTransactionRepository.saveAndFlush(paycheckTransaction);
 
         }else throw new UserAccountNotFoundException("Lack of account");
     }
 
-    public List<PaycheckTransaction> getPaycheckList(UserAccountHolderId userAccountHolderId){
-        Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userAccountHolderId.getUserId());
+    public List<PaycheckTransaction> getPaycheckList(long userId){
+        Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userId);
         if(byUserId.isPresent()){
             List<PaycheckTransaction> allByUserAccountId = paycheckTransactionRepository.findAllByUserAccountId(Math.toIntExact(byUserId.get().getId()));
             if(allByUserAccountId.isEmpty()){
@@ -244,8 +242,8 @@ public class UserAccountService {
     }
 
     @Transactional
-    public void deleteUserAccount(UserAccountHolderId userAccountHolderId){
-        Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userAccountHolderId.getUserId());
+    public void deleteUserAccount(long userId){
+        Optional<UserAccount> byUserId = userAccountRepository.findByUserId(userId);
         if(byUserId.isPresent()){
             userAccountRepository.delete(byUserId.get());
         }else throw new UserAccountNotFoundException();

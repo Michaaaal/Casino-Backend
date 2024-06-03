@@ -46,8 +46,8 @@ public class UserService {
     @Value("${jwt.refresh.exp}")
     private int jwtRefreshExpiration;
 
-    public String generateToken(String username, int exp){
-        return jwtService.generateToken(username, exp);
+    public String generateToken(long userId,String username, int exp){
+        return jwtService.generateToken(userId,username, exp);
     }
 
     public void validateToken(HttpServletRequest request, HttpServletResponse response){
@@ -119,8 +119,8 @@ public class UserService {
                 Authentication authentication = authenticationManager
                         .authenticate(new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
                 if(authentication.isAuthenticated()){
-                    Cookie cookie = cookieService.generateCookie("token",generateToken(authRequest.getUsername(),jwtExpiration),jwtExpiration);
-                    Cookie refresh = cookieService.generateCookie("refresh",generateToken(authRequest.getUsername(),jwtRefreshExpiration),jwtRefreshExpiration);
+                    Cookie cookie = cookieService.generateCookie("token",generateToken(user.getId(), authRequest.getUsername(),jwtExpiration),jwtExpiration);
+                    Cookie refresh = cookieService.generateCookie("refresh",generateToken(user.getId(), authRequest.getUsername(),jwtRefreshExpiration),jwtRefreshExpiration);
                     response.addCookie(cookie);
                     response.addCookie(refresh);
                     return ResponseEntity.ok(
@@ -256,8 +256,10 @@ public class UserService {
                     return ResponseEntity.status(401).body(new AuthResponse("Cant Authorize, probably gmail is already used"));
                 }
 
-                String tokenValue = jwtService.generateToken(user.getAttribute("name"), jwtExpiration);
-                String refreshValue = jwtService.generateToken(user.getAttribute("name"), jwtRefreshExpiration);
+                long userId = userByEmail.getId();
+
+                String tokenValue = jwtService.generateToken(userId,user.getAttribute("name"), jwtExpiration);
+                String refreshValue = jwtService.generateToken(userId,user.getAttribute("name"), jwtRefreshExpiration);
                 Cookie token = cookieService.generateCookie("token", tokenValue, jwtExpiration);
                 Cookie refresh = cookieService.generateCookie("refresh", refreshValue, jwtRefreshExpiration);
                 response.addCookie(token);

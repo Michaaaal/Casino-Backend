@@ -17,12 +17,12 @@ public class SlotsGameEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private int stake;
+    private long stake;
     private Date date;
     private boolean isDone;
     private long winAmount;
     private int multiplier;
-    private int userId;
+    private long userId;
 
     @Transient
     private Map<Integer,Slot> slotMatrix;

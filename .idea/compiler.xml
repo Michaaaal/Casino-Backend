@@ -7,6 +7,8 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="slots" />
+        <module name="accounting" />
         <module name="auth" />
         <module name="eureka" />
         <module name="gateway" />
@@ -16,20 +18,22 @@
         <processorPath useClasspath="false">
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.32/17d46b3e205515e1e8efd3ee4d57ce8018914163/lombok-1.18.32.jar" />
         </processorPath>
-        <module name="accounting.main" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="accounting" target="17" />
+      <module name="accounting.main" target="17" />
+      <module name="accounting.test" target="17" />
       <module name="authorization" target="17" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="accounting" options="-parameters" />
       <module name="auth" options="-parameters" />
       <module name="authorization" options="-parameters" />
       <module name="eureka" options="-parameters" />
       <module name="gateway" options="-parameters" />
+      <module name="slots" options="-parameters" />
     </option>
   </component>
 </project>

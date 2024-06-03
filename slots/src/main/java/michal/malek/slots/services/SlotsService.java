@@ -1,9 +1,11 @@
 package michal.malek.slots.services;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import michal.malek.slots.exceptions.SlotGameNotFoundException;
 import michal.malek.slots.models.Slot;
 import michal.malek.slots.models.SlotsGameEntity;
+import michal.malek.slots.models.SlotsGameEntityDTO;
 import michal.malek.slots.repositories.SlotsGameRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -67,7 +69,7 @@ public class SlotsService {
         return randomSlotsMatrix;
     }
 
-    public SlotsGameEntity spin(int stake, int userId){
+    public SlotsGameEntity spin(long stake, long userId){
         HashMap<Integer, Integer> slotsMatrix = this.getRandomSlotsMatrix();
 
         long winAmount = 0;
@@ -125,16 +127,36 @@ public class SlotsService {
     }
 
 
-    public SlotsGameEntity startSlotGame(int stake, int userId){
+    @Transactional
+    public SlotsGameEntity startSlotGame(long stake, long userId){
         SlotsGameEntity spin = this.spin(stake,userId);
         return slotsGameRepository.save(spin);
     }
 
     public void makeSlotGameDone(Long slotGameId){
+        System.out.println(slotGameId);
         Optional<SlotsGameEntity> byId = slotsGameRepository.findById(slotGameId);
         if(byId.isPresent()){
             byId.get().setDone(true);
             slotsGameRepository.saveAndFlush(byId.get());
-        }else throw new SlotGameNotFoundException();
+        }else {
+
+            throw new SlotGameNotFoundException("slots game not found");
+        }
+    }
+
+    public List<SlotsGameEntityDTO> getWinningSlotsGames(long userId){
+        List<SlotsGameEntity> winningSlots = slotsGameRepository.findAllByUserIdAndWinAmountGreaterThanAndIsDoneIsTrue(userId, 0);
+        if(winningSlots.isEmpty()){
+            return null;
+        }
+
+        return winningSlots.stream().map(elem-> new SlotsGameEntityDTO(elem.getStake(),elem.getDate(),elem.isDone(),elem.getWinAmount(),elem.getMultiplier())).sorted(new Comparator<SlotsGameEntityDTO>() {
+            @Override
+            public int compare(SlotsGameEntityDTO o1, SlotsGameEntityDTO o2) {
+                return Long.compare(o1.getWinAmount(), o2.getWinAmount());
+            }
+        }).toList();
+
     }
 }

@@ -23,14 +23,11 @@ public class SlotsServiceTests {
 
     @Test
     void testSpinReturnsCorrectEntity() {
-        // Przygotowanie
         int stake = 10;
         int userId = 1;
 
-        // Wywołanie
         SlotsGameEntity result = slotsService.spin(stake, userId);
 
-        // Weryfikacja
         assertNotNull(result);
         assertEquals(userId, result.getUserId());
         assertEquals(stake, result.getStake());
@@ -41,25 +38,22 @@ public class SlotsServiceTests {
 
     @Test
     void testSpinWithNoWinningCombination() {
-        // Przygotowanie, żeby żadna kombinacja nie była spełniona
         slotsService = spy(slotsService);
         doReturn(generateNoWinningSlotsMatrix()).when(slotsService).getRandomSlotsMatrix();
 
         int stake = 10;
         int userId = 1;
 
-        // Wywołanie
         SlotsGameEntity result = slotsService.spin(stake, userId);
 
-        // Weryfikacja
         assertEquals(0, result.getWinAmount());
-        assertEquals(1, result.getMultiplier()); // Brak wygranej, mnożnik początkowy
+        assertEquals(1, result.getMultiplier());
     }
 
     private HashMap<Integer, Integer> generateNoWinningSlotsMatrix() {
         HashMap<Integer, Integer> slotsMatrix = new HashMap<>();
         for (int i = 1; i <= 12; i++) {
-            slotsMatrix.put(i, i); // Przykładowa macierz bez spełnienia żadnej kombinacji
+            slotsMatrix.put(i, i);
         }
         return slotsMatrix;
     }
